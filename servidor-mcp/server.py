@@ -9,7 +9,19 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse
 
 PORT = int(os.environ.get("MCP_PORT", 7301))
-SECRET_HEX = os.environ.get("REQUEST_STATE_SECRET", "")
+# Validacao obrigatoria de integridade do requestState
+SECRET_HEX = os.environ.get("REQUEST_STATE_SECRET", "").strip()
+if not SECRET_HEX:
+    sys.stderr.write("ERRO FATAL: Variavel de ambiente REQUEST_STATE_SECRET obrigatoria nao configurada.\n")
+    sys.exit(1)
+
+try:
+    SECRET_BYTES = bytes.fromhex(SECRET_HEX)
+    if len(SECRET_BYTES) < 32:
+        raise ValueError("Chave deve ter pelo menos 32 bytes")
+except Exception as e:
+    sys.stderr.write(f"ERRO FATAL: REQUEST_STATE_SECRET invalida: {e}\n")
+    sys.exit(1)
 SECRET = bytes.fromhex(SECRET_HEX) if SECRET_HEX else b"00"*32
 
 BASE_DIR = os.path.dirname(__file__)
